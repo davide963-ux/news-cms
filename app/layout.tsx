@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { getCategories } from "@/lib/queries";
+import { getCryptoTicker, formatCryptoPrice } from "@/lib/crypto";
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_SITE_NAME || "Lajme Ditore",
@@ -13,44 +14,70 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const categories = await getCategories();
+  const [categories, ticker] = await Promise.all([
+    getCategories(),
+    getCryptoTicker(),
+  ]);
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || "Lajme Ditore";
 
   return (
     <html lang="sq">
       <body className="min-h-screen bg-paper text-ink antialiased">
-        <div className="border-b border-ink/10 bg-ink py-1.5 text-center text-[11px] font-medium uppercase tracking-wider text-white/60">
-          {new Intl.DateTimeFormat("sq-AL", {
-            weekday: "long",
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          }).format(new Date())}
-        </div>
-
-        <header className="sticky top-0 z-50 border-b border-ink/10 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4">
-            <Link
-              href="/"
-              className="shrink-0 text-2xl font-black uppercase tracking-tight text-ink"
-            >
-              <span className="text-brand">{siteName.slice(0, 1)}</span>
-              {siteName.slice(1)}
-            </Link>
-
-            <nav className="no-scrollbar flex flex-1 items-center gap-5 overflow-x-auto text-[13px] font-bold uppercase tracking-wide text-ink/60">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/kategori/${category.slug}`}
-                  className="shrink-0 border-b-2 border-transparent py-1 transition hover:border-brand hover:text-brand"
-                >
-                  {category.name}
-                </Link>
-              ))}
-            </nav>
+        <div className="sticky top-0 z-50">
+          <div className="flex items-center gap-4 overflow-x-auto border-b border-ink/10 bg-ink px-4 py-1.5 text-[11px] font-medium text-white/70 no-scrollbar">
+            <span className="shrink-0 uppercase tracking-wider text-white/50">
+              {new Intl.DateTimeFormat("sq-AL", {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+              }).format(new Date())}
+            </span>
+            {ticker.length > 0 ? (
+              <div className="flex shrink-0 items-center gap-4">
+                {ticker.map((coin) => {
+                  const up = coin.change24h >= 0;
+                  return (
+                    <span key={coin.id} className="flex shrink-0 items-center gap-1.5">
+                      <span className="font-bold text-white">{coin.symbol}</span>
+                      <span className="tabular-nums text-white/80">
+                        {formatCryptoPrice(coin.price)}
+                      </span>
+                      <span
+                        className={`tabular-nums font-semibold ${up ? "text-emerald-400" : "text-red-400"}`}
+                      >
+                        {up ? "▲" : "▼"} {Math.abs(coin.change24h).toFixed(2)}%
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
-        </header>
+
+          <header className="border-b border-ink/10 bg-white/95 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4">
+              <Link
+                href="/"
+                className="shrink-0 text-2xl font-black uppercase tracking-tight text-ink"
+              >
+                <span className="text-brand">{siteName.slice(0, 1)}</span>
+                {siteName.slice(1)}
+              </Link>
+
+              <nav className="no-scrollbar flex flex-1 items-center gap-5 overflow-x-auto text-[13px] font-bold uppercase tracking-wide text-ink/60">
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/kategori/${category.slug}`}
+                    className="shrink-0 border-b-2 border-transparent py-1 transition hover:border-brand hover:text-brand"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </header>
+        </div>
 
         <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
 
