@@ -48,27 +48,32 @@ export async function getCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-/** Latest published posts, newest first. */
-export async function getLatestPosts(limit = 20): Promise<PostSummary[]> {
+/** Latest published posts, newest first, with pagination. */
+export async function getLatestPosts(
+  limit = 20,
+  offset = 0
+): Promise<{ posts: PostSummary[]; total: number }> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from("posts")
     .select(
-      "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)"
+      "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)",
+      { count: "exact" }
     )
     .eq("status", "published")
     .order("published_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (error) throw error;
-  return (data as any) ?? [];
+  return { posts: (data as any) ?? [], total: count ?? 0 };
 }
 
-/** Published posts in one category, newest first. */
+/** Published posts in one category, newest first, with pagination. */
 export async function getPostsByCategory(
   categorySlug: string,
-  limit = 30
-): Promise<{ category: Category | null; posts: PostSummary[] }> {
+  limit = 30,
+  offset = 0
+): Promise<{ category: Category | null; posts: PostSummary[]; total: number }> {
   const supabase = await createClient();
 
   const { data: category } = await supabase
@@ -77,20 +82,37 @@ export async function getPostsByCategory(
     .eq("slug", categorySlug)
     .maybeSingle();
 
-  if (!category) return { category: null, posts: [] };
+  if (!category) return { category: null, posts: [], total: 0 };
 
+  const { data, error, count } = await supabase
+    .from("posts")
+    .select(
+      "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)",
+      { count: "exact" }
+    )
+    .eq("status", "published")
+    .eq("category_id", category.id)
+    .order("published_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  return { category, posts: (data as any) ?? [], total: count ?? 0 };
+}
+
+/** Most-viewed published posts — powers "Trending" / "Most Read" widgets. */
+export async function getTrendingPosts(limit = 5): Promise<PostSummary[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
     .select(
       "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)"
     )
     .eq("status", "published")
-    .eq("category_id", category.id)
-    .order("published_at", { ascending: false })
+    .order("views", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  return { category, posts: (data as any) ?? [] };
+  return (data as any) ?? [];
 }
 
 /** One published post by slug, with its gallery images. */
@@ -107,6 +129,64 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
 
   if (error) throw error;
   return data as any;
+}
+
+/** Other published posts in the same category — for the article page's
+ * "Related Articles" section. */
+export async function getRelatedPosts(
+  categoryId: string | undefined,
+  excludePostId: string,
+  limit = 4
+): Promise<PostSummary[]> {
+  if (!categoryId) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)"
+    )
+    .eq("status", "published")
+    .eq("category_id", categoryId)
+    .neq("id", excludePostId)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data as any) ?? [];
+}
+
+/** The published post immediately before/after this one by publish date —
+ * for the article page's Previous/Next navigation. */
+export async function getAdjacentPosts(
+  publishedAt: string | null
+): Promise<{ prev: PostSummary | null; next: PostSummary | null }> {
+  if (!publishedAt) return { prev: null, next: null };
+  const supabase = await createClient();
+
+  const [{ data: prevData }, { data: nextData }] = await Promise.all([
+    supabase
+      .from("posts")
+      .select(
+        "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)"
+      )
+      .eq("status", "published")
+      .lt("published_at", publishedAt)
+      .order("published_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("posts")
+      .select(
+        "id, title, slug, excerpt, cover_image_url, published_at, views, categories(id, name, slug)"
+      )
+      .eq("status", "published")
+      .gt("published_at", publishedAt)
+      .order("published_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  return { prev: (prevData as any) ?? null, next: (nextData as any) ?? null };
 }
 
 /**
