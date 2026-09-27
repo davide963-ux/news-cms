@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Visual-only signup form — there is no email service wired up behind this
  * yet, so submitting does nothing. Swap the <form> action for a real
