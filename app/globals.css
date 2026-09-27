@@ -3,10 +3,20 @@
 @tailwind utilities;
 
 body {
-  background-color: #f7f5f2;
-  color: #1a1a1a;
+  background-color: #fafafa;
+  color: #14171a;
 }
 
 a {
   color: inherit;
+}
+
+/* Hide scrollbar on the horizontally-scrolling mobile category nav, while
+   keeping it scrollable by touch/drag. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

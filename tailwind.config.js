@@ -8,9 +8,15 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#c0392b",
-          dark: "#922b21",
+          DEFAULT: "#EB1E32",
+          dark: "#B3121F",
+          light: "#FF4D5E",
         },
+        ink: {
+          DEFAULT: "#14171A",
+          soft: "#2A2E33",
+        },
+        paper: "#FAFAFA",
       },
     },
   },

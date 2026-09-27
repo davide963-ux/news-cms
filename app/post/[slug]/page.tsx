@@ -2,17 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import AdBanner from "@/components/AdBanner";
 import { getPostBySlug, incrementPostViews } from "@/lib/queries";
-
-function formatDate(dateString: string | null) {
-  if (!dateString) return "";
-  return new Intl.DateTimeFormat("sq-AL", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dateString));
-}
+import { formatDate } from "@/lib/format";
 
 /**
  * Post bodies are stored as plain text (no HTML) — a blank line starts a new
@@ -23,7 +13,7 @@ function PostBody({ body }: { body: string }) {
   const paragraphs = body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
   return (
-    <div className="space-y-4 text-lg leading-relaxed text-black/80">
+    <div className="space-y-4 text-lg leading-relaxed text-ink/80">
       {paragraphs.map((paragraph, i) => (
         <p key={i}>
           {paragraph.split("\n").map((line, j, arr) => (
@@ -55,12 +45,14 @@ export default async function PostPage({
     <article className="space-y-6">
       <header className="space-y-3">
         {post.categories ? (
-          <span className="inline-block rounded bg-brand/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-brand">
+          <span className="inline-block rounded bg-brand px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white">
             {post.categories.name}
           </span>
         ) : null}
-        <h1 className="text-3xl font-bold leading-tight">{post.title}</h1>
-        <div className="flex items-center gap-3 text-sm text-black/40">
+        <h1 className="text-3xl font-black leading-tight text-ink sm:text-4xl">
+          {post.title}
+        </h1>
+        <div className="flex items-center gap-3 border-b border-ink/10 pb-4 text-sm font-medium text-ink/40">
           <span>{formatDate(post.published_at)}</span>
           <span>·</span>
           <span>{post.views + 1} shikime</span>
@@ -68,7 +60,7 @@ export default async function PostPage({
       </header>
 
       {post.cover_image_url ? (
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-black/5">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-ink/5">
           <Image
             src={post.cover_image_url}
             alt={post.title}
@@ -86,7 +78,7 @@ export default async function PostPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {post.post_images.map((image) => (
             <figure key={image.id} className="space-y-1">
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-black/5">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-ink/5">
                 <Image
                   src={image.image_url}
                   alt={image.caption ?? post.title}
@@ -96,7 +88,7 @@ export default async function PostPage({
                 />
               </div>
               {image.caption ? (
-                <figcaption className="text-sm text-black/50">
+                <figcaption className="text-sm text-ink/50">
                   {image.caption}
                 </figcaption>
               ) : null}

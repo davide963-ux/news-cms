@@ -29,7 +29,7 @@ export default async function AdBanner({
       href={`/api/ads/click/${ad.id}`}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className={`block overflow-hidden rounded-lg border border-black/10 bg-white ${className ?? ""}`}
+      className={`block overflow-hidden rounded-xl border border-ink/10 bg-white ${className ?? ""}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -37,7 +37,7 @@ export default async function AdBanner({
         alt={ad.advertiser_name}
         className="h-full w-full object-cover"
       />
-      <span className="block px-2 py-1 text-center text-[10px] uppercase tracking-wide text-black/40">
+      <span className="block px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-ink/40">
         Reklamë
       </span>
     </a>
